@@ -1,3 +1,4 @@
 src/chatToken.js
+src/userData.js
 node_modules
 package-lock.json

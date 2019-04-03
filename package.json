@@ -14,6 +14,13 @@
     "@slack/client": "^4.11.0",
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
+    "node-cron": "^2.0.3",
+    "puppeteer": "^1.14.0",
+    "puppeteer-core": "^1.14.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-google": "^0.12.0",
     "nodemon": "^1.18.10"
   }
 }
