@@ -1,6 +1,7 @@
 const {WebClient} = require('@slack/client');
 const {botMessage} = require('./messagetemplate.js');
 const {token} = require('./chatToken.js');
+const {userInfo} = require('./userData.js');
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
@@ -16,22 +17,17 @@ const botHandler = (async () => {
   const res = await web.conversations.list({
     types: 'private_channel',
   });
-  const channel = res.channels.find((c) => c.is_member);
-
+  const channel = res.channels.find((c) => c.is_member); // 왜 이렇게 채널을 찾았었지?
   if (channel) {
     const attendList = [];
     const absentList = [];
     let remindList = [];
-    console.log('its channel-------------');
     const membersData = await web.conversations.members({
       channel: channel.id,
     });
     const memberList = membersData.members;
-    console.log(memberList);
-    console.log('memend');
     app.post('/', (req, res) => {
       const data = JSON.parse(req.body.payload);
-      // console.log(data)
       const userId = data.user.id;
       const isAttending = data.actions[0].value === 'attend';
       if (isAttending & !attendList.includes(userId)) {
@@ -72,36 +68,56 @@ const botHandler = (async () => {
       as_user: true,
       blocks: botMessage(attendList, absentList, remindList),
     });
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto('https://spacecloud.kr/space/16034');
-    await page.click('li[_productid=\"27711\"]');
-    await page.click('.detail_contact_footer ._gotoReservation');
-    await page.click('.btn_login');
-    await page.focus('#id.int');
-    await page.keyboard.type(`${userId}`, {delay: 100});
-    await page.focus('#pw.int');
-    await page.keyboard.type(`${userPw}`, {delay: 100});
-    await page.click('.btn_global');
-    await page.click('.btn_cancel .btn');
-    await page.click('#name');
-    for (let i=0; i<3; i++) {
-      await page.keyboard.press('Backspace');
-    }
-    await page.keyboard.type(`${userName}`, {delay: 100});
-    await page.click(`td[_ymd=\"${reserveDate}\"]`);
-    await page.click('li[_tm=\"12\"]');
-    await page.mouse.move(0, 0);
-    await page.click('li[_tm=\"20\"] .price');
-    await page.click('li[_tm=\"21\"] .price');
-    await page.click('#_agreeEl .option');
-    await page.click('div.static > a.btn');
-    await page.click('div.btns > a._do_reserve');
+    const todayDate = new Date();
+    const dayToSec = 1000 * 60 * 60 * 24;
+    const tempDate = new Date(todayDate.getTime() + (dayToSec * 3));
+    const reserveYear = String(tempDate.getFullYear());
+    const reserveMonth = (function() {
+      const month = tempDate.getMonth() + 1;
+      if (month < 10) {
+        return ('0'.concat(String(month)));
+      }
+      return month;
+    })();
+    const reserveDay = (function() {
+      const date = tempDate.getDate();
+      if (date < 10) {
+        return ('0'.concat(String(date)));
+      }
+      return date;
+    })();
+    const reserveDate = reserveYear + reserveMonth + reserveDay;
+    // const browser = await puppeteer.launch();
+    // const page = await browser.newPage();
+    // await page.goto('https://spacecloud.kr/space/16034');
+    // await page.click('li[_productid=\"27711\"]');
+    // await page.click('.detail_contact_footer ._gotoReservation');
+    // await page.click('.btn_login');
+    // await page.focus('#id.int');
+    // await page.keyboard.type(`${userInfo.userId}`, {delay: 100});
+    // await page.focus('#pw.int');
+    // await page.keyboard.type(`${userInfo.userPw}`, {delay: 100});
+    // await page.click('.btn_global');
+    // await page.click('.btn_cancel .btn');
+    // await page.click('#name');
+    // for (let i=0; i<3; i++) {
+    //   await page.keyboard.press('Backspace');
+    // }
+    // await page.keyboard.type(`${userInfo.userName}`, {delay: 100});
+    // await page.click(`td[_ymd=\"${reserveDate}\"]`);
+    // await page.click('li[_tm=\"12\"]');
+    // await page.mouse.move(0, 0);
+    // await page.click('li[_tm=\"20\"] .price');
+    // await page.click('li[_tm=\"21\"] .price');
+    // await page.click('#_agreeEl .option');
+    // await page.click('div.static > a.btn');
+    // await page.click('div.btns > a._do_reserve');
   } else {
     console.log('그런 거 없다');
     console.log(res.channels);
   }
 });
 
-const cron = require('node-cron');
-cron.schedule('0 12 * * sunday', botHandler);
+// const cron = require('node-cron');
+// cron.schedule('56 21 * * wednesday', botHandler);
+botHandler();
