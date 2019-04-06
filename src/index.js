@@ -43,7 +43,7 @@ const botHandler = (async () => {
           attendList.splice(index, 1);
         }
       }
-      if (attendList.length + absentList.length >= 1) {
+      if (attendList.length + absentList.length >= Math.ceil(memberList.length / 2)) {
         const whoVoted = attendList.concat(absentList);
         remindList = memberList.filter((el)=>!whoVoted.includes(el));
       }
