@@ -1,0 +1,11 @@
+{
+	"chat_token": "",
+	"reservation": {
+		"user_id": "",
+		"password": "",
+		"name": ""
+	},
+	"http": {
+		"port": 3000
+	}
+}

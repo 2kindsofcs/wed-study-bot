@@ -1,6 +1,6 @@
 const Promise = require('bluebird');
 const puppeteer = require('puppeteer');
-const {userInfo} = require('./userData');
+const config = require('config');
 const {addDays, dateToString} = require('./date_utils');
 
 /**
@@ -29,10 +29,10 @@ async function reserve(sharedState) {
     await page.click('a.btn_naver.btn_login');
     await Promise.delay(600);
     await page.focus('#id.int');
-    await page.keyboard.type(`${userInfo.userId}`, {delay: 300});
+    await page.keyboard.type(`${config.get('reservation.user_id')}`, {delay: 300});
     await Promise.delay(300);
     await page.focus('#pw.int');
-    await page.keyboard.type(`${userInfo.userPw}`, {delay: 300});
+    await page.keyboard.type(`${config.get('reservation.password')}`, {delay: 300});
     await Promise.delay(300);
     await page.waitForSelector('.btn_global');
     await Promise.delay(300);
@@ -52,7 +52,7 @@ async function reserve(sharedState) {
       await page.keyboard.press('Backspace');
     }
     await Promise.delay(300);
-    await page.keyboard.type(`${userInfo.userName}`, {delay: 100});
+    await page.keyboard.type(`${config.get('reservation.name')}`, {delay: 100});
     await Promise.delay(300);
     await page.click(`td[_ymd=\"${reserveDate}\"]`, {delay: 2000});
     await page.click('li[_tm=\"15\"]');

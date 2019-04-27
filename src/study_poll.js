@@ -1,22 +1,41 @@
 const {WebClient} = require('@slack/client');
 const express = require('express');
 const bodyParser = require('body-parser'); // 외부 라이브러리를 가급적 앞쪽에 써주자
+const config = require('config');
 const {botMessage} = require('./message_template');
-const {token} = require('./chatToken'); // 확장자 안 붙이는 게 맞음
-
-
-const port = 3000;
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
+app.get('/test', (req, res) => {
+  res.status(200);
+  res.write('It running!');
+  res.end();
+});
 
-const web = new WebClient(token);
+if (config.has('http.https')) {
+  const path = require('path');
+  const https = require('https');
+  const fs = require('fs'); // file system
+  const port = 443;
+  const privateKey = fs.readFileSync(path.resolve(config.get('http.https.key')), 'utf-8');
+  const certificate = fs.readFileSync(path.resolve(config.get('http.https.cert')), 'utf-8');
+  const ca = fs.readFileSync(path.resolve(config.get('http.https.ca')), 'utf-8');
+  const httpsServer = https.createServer({key: privateKey, cert: certificate, ca: ca}, app);
+  httpsServer.listen(443, () => console.log("HTTPS server started"));
+} else {
+  const http = require('http');
+  const httpServer = http.createServer(app);
+  httpServer.listen(parseInt(config.get('http.port'), 10), () => console.log("HTTP server started"));
+
+}
 
 /**
  * @param {object} sharedState
  * @noreturns
  */
 async function studyPoll(sharedState) {
+  const web = new WebClient(config.get('chat_token'));
+
   const res = await web.conversations.list({
     types: 'private_channel',
   });
@@ -73,7 +92,6 @@ async function studyPoll(sharedState) {
         res.end();
       }
     });
-    app.listen(port, () => console.log('서버실행중!'));
     web.chat.postMessage({
       channel: `${channel.id}`,
       text: '',
@@ -85,6 +103,7 @@ async function studyPoll(sharedState) {
     console.log(res.channels);
   }
 } // 함수는 끝에 세미콜론 없어
+
 module.exports = {
   studyPoll,
 };
