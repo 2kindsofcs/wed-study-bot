@@ -109,6 +109,7 @@ app.post('/', (req, res) => { // user가 참석 또는 불참 버튼을 클릭
  * @noreturns
  */
 async function studyPoll(sharedState) {
+  const dateString = dateToString(new Date());
   const web = new WebClient(config.get('chat_token'));
   const res = await web.conversations.list({
     types: 'private_channel',
@@ -116,23 +117,29 @@ async function studyPoll(sharedState) {
   // const res = await web.conversations.list();
   console.log(web.conversations);
   const channel = res.channels.find((c) => c.is_member); // 왜 이렇게 채널을 찾았었지?
-  if (channel) {
-    const attendList = [];
-    const absentList = [];
-    let remindList = [];
-    const membersData = await web.conversations.members({
+  if (!channel) {
+    console.log('그런 거 없다');
+    console.log(res.channels);
+    return;
+  }
+  if (await db('round_info').where({study_date: dateString}).count('*') !== 0) {
+    return;
+  }
+  // 일단 가격은 모르니까(수요조사 전이므로) 스터디 날짜만 저장
+  await db('round_info').insert({study_date: dateString});
+  const membersList = (await web.conversations.members({
       channel: channel.id,
-    });
+  })).members;
+  // 스터디 날짜와 멤버들 이름만 저장
+  await db('rsvp').insert(
+      membersList.map((name)=>({study_date: dateString, member_name: name}))
+  );
     web.chat.postMessage({
       channel: `${channel.id}`,
       text: '',
       as_user: true,
-      blocks: botMessage(attendList, absentList, remindList, dateString),
+    blocks: botMessage([], [], [], dateString),
     });
-  } else {
-    console.log('그런 거 없다');
-    console.log(res.channels);
-  }
 } // 함수는 끝에 세미콜론 없어
 
 module.exports = {
