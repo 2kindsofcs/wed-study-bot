@@ -3,6 +3,12 @@ const express = require('express');
 const bodyParser = require('body-parser'); // 외부 라이브러리를 가급적 앞쪽에 써주자
 const config = require('config');
 const {botMessage} = require('./message_template');
+const knex = require('knex')({
+  client: 'sqlite3',
+  connection: {
+    filename: './dev.sqlite3',
+  },
+});
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
