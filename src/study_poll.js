@@ -4,14 +4,7 @@ const bodyParser = require('body-parser'); // 외부 라이브러리를 가급�
 const config = require('config');
 const {dateToString} = require('./date_utils');
 const {botMessage} = require('./message_template');
-const knex = require('knex')({
-  client: 'sqlite3',
-  connection: {
-    filename: './dev.sqlite3',
-  },
-});
-
-const dateString = dateToString(new Date());
+const db = require('./db');
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
