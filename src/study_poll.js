@@ -16,17 +16,30 @@ if (config.has('http.https')) {
   const path = require('path');
   const https = require('https');
   const fs = require('fs'); // file system
-  const port = 443;
-  const privateKey = fs.readFileSync(path.resolve(config.get('http.https.key')), 'utf-8');
-  const certificate = fs.readFileSync(path.resolve(config.get('http.https.cert')), 'utf-8');
-  const ca = fs.readFileSync(path.resolve(config.get('http.https.ca')), 'utf-8');
-  const httpsServer = https.createServer({key: privateKey, cert: certificate, ca: ca}, app);
-  httpsServer.listen(443, () => console.log("HTTPS server started"));
+  const privateKey = fs.readFileSync(
+      path.resolve(config.get('http.https.key')),
+      'utf-8'
+  );
+  const certificate = fs.readFileSync(
+      path.resolve(config.get('http.https.cert')),
+      'utf-8'
+  );
+  const ca = fs.readFileSync(
+      path.resolve(config.get('http.https.ca')),
+      'utf-8'
+  );
+  const httpsServer = https.createServer(
+      {key: privateKey, cert: certificate, ca: ca},
+      app
+  );
+  httpsServer.listen(443, () => console.log('HTTPS server started'));
 } else {
   const http = require('http');
   const httpServer = http.createServer(app);
-  httpServer.listen(parseInt(config.get('http.port'), 10), () => console.log("HTTP server started"));
-
+  httpServer.listen(
+      parseInt(config.get('http.port'), 10),
+      () => console.log('HTTP server started')
+  );
 }
 
 /**

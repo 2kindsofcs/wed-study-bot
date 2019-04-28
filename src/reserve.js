@@ -29,10 +29,10 @@ async function reserve(sharedState) {
     await page.click('a.btn_naver.btn_login');
     await Promise.delay(600);
     await page.focus('#id.int');
-    await page.keyboard.type(`${config.get('reservation.user_id')}`, {delay: 300});
+    await page.keyboard.type(config.get('reservation.user_id'), {delay: 300});
     await Promise.delay(300);
     await page.focus('#pw.int');
-    await page.keyboard.type(`${config.get('reservation.password')}`, {delay: 300});
+    await page.keyboard.type(config.get('reservation.password'), {delay: 300});
     await Promise.delay(300);
     await page.waitForSelector('.btn_global');
     await Promise.delay(300);
