@@ -44,9 +44,12 @@ if (config.has('http.https')) {
   );
 }
 
-app.post('/', (req, res) => { // user가 참석 또는 불참 버튼을 클릭
+// db와 관련된 명령은 await을 해야 실행시킬 수 있으므로 async 추가
+app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 클릭
   const reqTime = new Date().getTime();
-  const memberList = membersData.members;
+  const memberList = db('rsvp').where(
+      {stduy_date: dateString}
+  ).select();
   const dueTime = new Date().getTime();
   if (reqTime - dueTime < (1000 * 60 * 60 * 6)) {
     const data = JSON.parse(req.body.payload);
@@ -61,26 +64,52 @@ app.post('/', (req, res) => { // user가 참석 또는 불참 버튼을 클릭
       res.end();
       return;
     }
-    if (isAttending && !attendList.includes(userId)) {
-      attendList.push(userId);
-      if (absentList.includes(userId)) {
-        const index = absentList.findIndex((name) => name === userId);
-        absentList.splice(index, 1);
-      }
-    } else if (!isAttending && !absentList.includes(userId)) {
-      absentList.push(userId);
-      if (attendList.includes(userId)) {
-        const index = attendList.findIndex((name) => name === userId);
-        attendList.splice(index, 1);
-      }
+    if (isAttending) {
+      await db('rsvp').where(
+          {member_name: userId, study_date: dateString}
+      ).update({attending: true});
+    } else {
+      await db('rsvp').where(
+          {member_name: userId, study_date: dateString}
+      ).update({attending: false});
     }
-    sharedState.isMoreThanThree = attendList.length > 3;
-    // 과반수를 넘었는지를 체크하고 싶은 건데, 꼭 정수와 정수를 비교해야하는 건 아니므로 ceil을 꼭
-    // 쓸 필요는 없음.
-    if (attendList.length + absentList.length >= memberList.length / 2) {
-      const whoVoted = attendList.concat(absentList);
-      remindList = memberList.filter((el) => !whoVoted.includes(el));
+    const attendList = await db('rsvp').where(
+        {attending: true, stduy_date: dateString}
+    ).select('member_name');
+    const absentList = await db('rsvp').where(
+        {attending: false, stduy_date: dateString}
+    ).select('member_name');
+    let remindList;
+    noAnswerNum = await db('rsvp').where(
+        {study_date: dateString}
+    ).groupBy('attending').count('null');
+    if (noAnswerNum < memberList.length / 2) {
+      remindList = await db('rsvp').where(
+          {attending: null, stduy_date: dateString}
+      ).select('member_name');
     }
+
+    // 옛날 코드
+    // if (isAttending && !attendList.includes(userId)) {
+    //   attendList.push(userId);
+    //   if (absentList.includes(userId)) {
+    //     const index = absentList.findIndex((name) => name === userId);
+    //     absentList.splice(index, 1);
+    //   }
+    // } else if (!isAttending && !absentList.includes(userId)) {
+    //   absentList.push(userId);
+    //   if (attendList.includes(userId)) {
+    //     const index = attendList.findIndex((name) => name === userId);
+    //     attendList.splice(index, 1);
+    //   }
+    // }
+    // sharedState.isMoreThanThree = attendList.length > 3;
+    // // 과반수를 넘었는지를 체크하고 싶은 건데, 꼭 정수와 정수를 비교해야하는 건 아니므로 ceil을 꼭
+    // // 쓸 필요는 없음.
+    // if (attendList.length + absentList.length >= memberList.length / 2) {
+    //   const whoVoted = attendList.concat(absentList);
+    //   remindList = memberList.filter((el) => !whoVoted.includes(el));
+    // }
     const ts = data.container.message_ts;
     console.log(`<@${userId}> is ${isAttending ? 'attending' : 'absent'}`);
     web.chat.update(
@@ -121,18 +150,18 @@ async function studyPoll(sharedState) {
   // 일단 가격은 모르니까(수요조사 전이므로) 스터디 날짜만 저장
   await db('round_info').insert({study_date: dateString});
   const membersList = (await web.conversations.members({
-      channel: channel.id,
+    channel: channel.id,
   })).members;
   // 스터디 날짜와 멤버들 이름만 저장
   await db('rsvp').insert(
       membersList.map((name)=>({study_date: dateString, member_name: name}))
   );
-    web.chat.postMessage({
-      channel: `${channel.id}`,
-      text: '',
-      as_user: true,
+  web.chat.postMessage({
+    channel: `${channel.id}`,
+    text: '',
+    as_user: true,
     blocks: botMessage([], [], [], dateString),
-    });
+  });
 } // 함수는 끝에 세미콜론 없어
 
 module.exports = {
