@@ -12,9 +12,10 @@ function stringifyUserIdList(userIds) {
  * @param {string[]} attendList
  * @param {string[]} absentList
  * @param {string[]} remindList
+ * @param {string} dateString
  * @return {*}
  */
-function botMessage(attendList, absentList, remindList) {
+function botMessage(attendList, absentList, remindList, dateString) {
   const message = [
     {
       'type': 'section',
@@ -36,7 +37,7 @@ function botMessage(attendList, absentList, remindList) {
             'emoji': true,
             'text': '참석',
           },
-          'value': 'attend',
+          'value': `attend_${dateString}`,
         },
         {
           'type': 'button',
@@ -45,7 +46,7 @@ function botMessage(attendList, absentList, remindList) {
             'emoji': true,
             'text': '불참',
           },
-          'value': 'absent',
+          'value': `absent_${dateString}`,
         },
       ],
     },
