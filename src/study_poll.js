@@ -46,6 +46,7 @@ if (config.has('http.https')) {
 
 // db와 관련된 명령은 await을 해야 실행시킬 수 있으므로 async 추가
 app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 클릭
+  try {
     // webClient를 하나만 만들라는 법은 없다. 어차피 슬랙 서버는 다 똑같이 취급할 것이다.
     const web = new WebClient(config.get('chat_token'));
     const data = JSON.parse(req.body.payload);
@@ -123,6 +124,9 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
     );
     res.status(200);
     res.end();
+  }
+  } catch (e) {
+    console.log(e);
   }
 });
 
