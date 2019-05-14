@@ -46,17 +46,19 @@ if (config.has('http.https')) {
 
 // db와 관련된 명령은 await을 해야 실행시킬 수 있으므로 async 추가
 app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 클릭
-  const reqTime = new Date().getTime();
-  const memberList = db('rsvp').where(
-      {stduy_date: dateString}
-  ).select();
-  const dueTime = new Date().getTime();
-  if (reqTime - dueTime < (1000 * 60 * 60 * 6)) {
+    // webClient를 하나만 만들라는 법은 없다. 어차피 슬랙 서버는 다 똑같이 취급할 것이다.
+    const web = new WebClient(config.get('chat_token'));
     const data = JSON.parse(req.body.payload);
+    const [response, dateString] = data.actions[0].value.split('_');
+    // post 요청이 날아온 시각을 확인하는 방법도 있겠지만, 어차피 크론이 6시에 예약을 시킬 것이므로
+    // db를 확인해서(예약완료시 price에 가격이 기입될테니까) null이 아니면 요청 무시!
+    if (await db('round_info').where({
+      study_date: dateString, price: null,
+    })) {
+      const currentDate = dateToString(new Date());
     const userId = data.user.id;
-    const [response, date] = data.actions[0].value.split('_');
     const isAttending = response === 'attend';
-    const isValidDate = date === dateString;
+      const isValidDate = currentDate === dateString;
     // 조건을 추가하고 싶을 때 계속 추가하다보면 if 밑에 또 if...식으로 너무 복잡해지므로
     // 이럴 때 쓰는 방법 중 하나가 역으로 if(!조건)하고 아무 일도 하지 않는 것.
     if (!isValidDate) {
