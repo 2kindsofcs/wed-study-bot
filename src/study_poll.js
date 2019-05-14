@@ -100,6 +100,11 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
             break;
     }
       }
+      let remindList = [];
+      // 참석자 수 + 불참자 수 >= 전체 인원/2를 정리하면 아래와 같은 식이 된다
+      if (members.attend + members.absent >= members.no_response) {
+        remindList = members.no_response;
+      }
     const ts = data.container.message_ts;
     console.log(`<@${userId}> is ${isAttending ? 'attending' : 'absent'}`);
     web.chat.update(
