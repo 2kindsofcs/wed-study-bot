@@ -75,43 +75,31 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
           {member_name: userId, study_date: dateString}
       ).update({attending: false});
     }
-    const attendList = await db('rsvp').where(
-        {attending: true, stduy_date: dateString}
-    ).select('member_name');
-    const absentList = await db('rsvp').where(
-        {attending: false, stduy_date: dateString}
-    ).select('member_name');
-    let remindList;
-    noAnswerNum = await db('rsvp').where(
+      const rsvp = await db('rsvp').where(
         {study_date: dateString}
-    ).groupBy('attending').count('null');
-    if (noAnswerNum < memberList.length / 2) {
-      remindList = await db('rsvp').where(
-          {attending: null, stduy_date: dateString}
-      ).select('member_name');
+      ).select('member_name', 'attending');
+      // [{member_name:"3423", attending:"1"}, {}]
+      const members = {
+        attend: [],
+        absent: [],
+        no_response: [],
+      };
+      // Q.왜 const죠? let이어만 할 것 같은데요.
+      // A.for문 블록 안에서만 유효한 변수입니다!
+      // for ~ of의 경우 블록 안에서 변경되지 않으면 const를 쓰세요
+      for (const row of rsvp) {
+        switch (row.attending) {
+          case 1: // 디버깅을 할 때는 코드보다도 올바른 값이 전달되고 있는지를 확인. true가 아니라 1이었다!
+            members.attend.push(row.member_name);
+            break;
+          case 0:
+            members.absent.push(row.member_name);
+            break;
+          case null:
+            members.no_response.push(row.member_name);
+            break;
     }
-
-    // 옛날 코드
-    // if (isAttending && !attendList.includes(userId)) {
-    //   attendList.push(userId);
-    //   if (absentList.includes(userId)) {
-    //     const index = absentList.findIndex((name) => name === userId);
-    //     absentList.splice(index, 1);
-    //   }
-    // } else if (!isAttending && !absentList.includes(userId)) {
-    //   absentList.push(userId);
-    //   if (attendList.includes(userId)) {
-    //     const index = attendList.findIndex((name) => name === userId);
-    //     attendList.splice(index, 1);
-    //   }
-    // }
-    // sharedState.isMoreThanThree = attendList.length > 3;
-    // // 과반수를 넘었는지를 체크하고 싶은 건데, 꼭 정수와 정수를 비교해야하는 건 아니므로 ceil을 꼭
-    // // 쓸 필요는 없음.
-    // if (attendList.length + absentList.length >= memberList.length / 2) {
-    //   const whoVoted = attendList.concat(absentList);
-    //   remindList = memberList.filter((el) => !whoVoted.includes(el));
-    // }
+      }
     const ts = data.container.message_ts;
     console.log(`<@${userId}> is ${isAttending ? 'attending' : 'absent'}`);
     web.chat.update(
