@@ -110,11 +110,16 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
     web.chat.update(
         {
           ts: ts,
-          channel: channel.id,
+            // 이미 유효한 요청인지 검증되었으므로 해당 메세지의 channel id 그대로 쓰면 됨
+            channel: data.channel.id,
           text: '',
           as_user: true,
-          blocks: botMessage(attendList, absentList, remindList),
-        }
+            blocks: botMessage(
+                members.attend,
+                members.absent,
+                remindList,
+                dateString),
+          } // 빠져있던 dateString 추가
     );
     res.status(200);
     res.end();
