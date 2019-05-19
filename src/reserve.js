@@ -43,7 +43,6 @@ async function reserve() {
     await page.click('.btn_global');
     // console.log(page.url());
     // await page.waitForNavigation();
-    page.screenshot({path: 'after btn global.png'});
     await page.waitForSelector('.btn_cancel');
     await Promise.delay(300);
     await page.click('.btn_cancel');
@@ -67,8 +66,6 @@ async function reserve() {
     await Promise.delay(100);
     await page.click('li[_tm=\"21\"] .price');
     console.log('move');
-    // page.addScriptTag({path:})
-    page.screenshot({path: 'timeselect.png'});
     await Promise.delay(300);
     console.log('timeselect');
     // await을 쓰면 then을 쓰지 않아도 원하는 내용물을 밖으로 꺼내준다.
