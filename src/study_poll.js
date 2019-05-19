@@ -2,7 +2,7 @@ const {WebClient} = require('@slack/client');
 const express = require('express');
 const bodyParser = require('body-parser'); // 외부 라이브러리를 가급적 앞쪽에 써주자
 const config = require('config');
-const {dateToString} = require('./date_utils');
+const {dateToString, addDays} = require('./date_utils');
 const {botMessage} = require('./message_template');
 const db = require('./db');
 
@@ -136,12 +136,12 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
  * @param {object} sharedState
  * @noreturns
  */
-async function studyPoll(sharedState) {
+async function studyPoll() {
   try {
     // cron이 이 함수를 실행할 때 dateString은 최초로 만들어진다.
     // 그리고 message에 박제되므로 유저가 버튼 누를 때 해당 메세지에 들어있는
     // dateString은 cron이 이 함수를 실행한 날짜이다.
-    const dateString = dateToString(new Date());
+    const dateString = dateToString(addDays(new Date(), 3));
     const web = new WebClient(config.get('chat_token'));
     const res = await web.conversations.list({
       types: 'private_channel',
