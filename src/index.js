@@ -4,21 +4,16 @@
 const {studyPoll} = require('./study_poll');
 const {reserve} = require('./reserve');
 const config = require('config');
+const db = require('./db');
 
-/*
-isMorethanThree
-*/
-
-const sharedState = {
-  isMoreThanThree: false,
-};
-
-const cron = require('node-cron');
-// 인자를 넣은 상태로 함수를 넣어주면 그건 리턴값이지 함수가 아니게 된다!
-// 고로 익명함수를 써서 인자를 진짜 원하는 함수에 넣어주면 해 - 결
-cron.schedule(config.get('time.bot_time'), () => studyPoll(sharedState), {
-  timezone: 'Asia/Seoul',
-});
-cron.schedule(config.get('time.reserve_time'), () => reserve(sharedState), {
-  timezone: 'Asia/Seoul',
+db.migrate.latest().then(() => {
+  const cron = require('node-cron');
+  // 인자를 넣은 상태로 함수를 넣어주면 그건 리턴값이지 함수가 아니게 된다!
+  // 고로 익명함수를 써서 인자를 진짜 원하는 함수에 넣어주면 해 - 결
+  cron.schedule(config.get('time.bot_time'), () => studyPoll(), {
+    timezone: 'Asia/Seoul',
+  });
+  cron.schedule(config.get('time.reserve_time'), () => reserve(), {
+    timezone: 'Asia/Seoul',
+  });
 });
