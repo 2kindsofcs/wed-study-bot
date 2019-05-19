@@ -135,39 +135,55 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
  * @noreturns
  */
 async function studyPoll(sharedState) {
+  try {
+    // cron이 이 함수를 실행할 때 dateString은 최초로 만들어진다.
+    // 그리고 message에 박제되므로 유저가 버튼 누를 때 해당 메세지에 들어있는
+    // dateString은 cron이 이 함수를 실행한 날짜이다.
   const dateString = dateToString(new Date());
   const web = new WebClient(config.get('chat_token'));
   const res = await web.conversations.list({
     types: 'private_channel',
   });
-  // const res = await web.conversations.list();
-  console.log(web.conversations);
   const channel = res.channels.find((c) => c.is_member); // 왜 이렇게 채널을 찾았었지?
   if (!channel) {
     console.log('그런 거 없다');
     console.log(res.channels);
     return;
   }
-  if (await db('round_info').where({study_date: dateString}).count('*') !== 0) {
+    // Q.어차피 cron으로 일주일에 한번씩 돌릴건데 왜 확인을 해야하죠?
+    // A.만약 서버가 꺼졌다 다시 켜진다거나 하는 상황에서 동일한 메세지가
+    // 계속 채팅방에 뿌려지는 것을 막을 수 있고, db에 insert되는 것도 막을 수 있음.
+    const roundCount = await db('round_info').where(
+        {study_date: dateString}
+    ).count('*');
+    console.log(roundCount);
+    if (roundCount[0]['count(*)'] !== 0) {
+      console.log(`이미 있단다 깔깔깔`);
     return;
   }
+    web.chat.postMessage({
+      channel: `${channel.id}`,
+      text: '',
+      as_user: true,
+      blocks: botMessage([], [], [], dateString),
+    });
   // 일단 가격은 모르니까(수요조사 전이므로) 스터디 날짜만 저장
   await db('round_info').insert({study_date: dateString});
   const membersList = (await web.conversations.members({
     channel: channel.id,
   })).members;
+    const botIndex = membersList.indexOf('UH3CD2TQA');
+    membersList.splice(botIndex, 1);
   // 스터디 날짜와 멤버들 이름만 저장
   await db('rsvp').insert(
       membersList.map((name)=>({study_date: dateString, member_name: name}))
   );
-  web.chat.postMessage({
-    channel: `${channel.id}`,
-    text: '',
-    as_user: true,
-    blocks: botMessage([], [], [], dateString),
-  });
+  } catch (e) {
+    console.log(e);
+  }
 } // 함수는 끝에 세미콜론 없어
 
+// index에서는 study_poll 파일 자체를 받는데 이건 또 왜 익스포트하고 있지? --> 고민 해결!
 module.exports = {
   studyPoll,
 };
