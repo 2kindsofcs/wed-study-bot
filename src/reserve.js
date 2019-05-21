@@ -70,7 +70,7 @@ async function reserve() {
     console.log('timeselect');
     // await을 쓰면 then을 쓰지 않아도 원하는 내용물을 밖으로 꺼내준다.
     const element = await page.$$('#_totalPrice');
-    const totalPrice = element[0].innerText.replace(',', '');
+    const totalPrice = parseInt(element[0].innerText.replace(',', ''));
     await page.click('#_agreeEl .option', {delay: 2000});
     await Promise.delay(300);
     await page.click('div.static > a.btn', {delay: 2000});
