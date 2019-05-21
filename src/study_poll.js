@@ -4,6 +4,7 @@ const bodyParser = require('body-parser'); // 외부 라이브러리를 가급�
 const config = require('config');
 const {dateToString, addDays} = require('./date_utils');
 const {botMessage} = require('./message_template');
+const {messageCal} = require('./calculate');
 const db = require('./db');
 
 const app = express();
@@ -133,7 +134,6 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
 });
 
 /**
- * @param {object} sharedState
  * @noreturns
  */
 async function studyPoll() {
@@ -143,13 +143,10 @@ async function studyPoll() {
     // dateString은 cron이 이 함수를 실행한 날짜이다.
     const dateString = dateToString(addDays(new Date(), 3));
     const web = new WebClient(config.get('chat_token'));
-    const res = await web.conversations.list({
-      types: 'private_channel',
-    });
-    const channel = res.channels.find((c) => c.is_member); // 왜 이렇게 채널을 찾았었지?
+    const channel = await web.conversations.list().
+        channels.filter((el) => (el.name_normalized === 'general'));
     if (!channel) {
       console.log('그런 거 없다');
-      console.log(res.channels);
       return;
     }
     // Q.어차피 cron으로 일주일에 한번씩 돌릴건데 왜 확인을 해야하죠?
@@ -185,7 +182,40 @@ async function studyPoll() {
   }
 } // 함수는 끝에 세미콜론 없어
 
+/**
+ * @noreturns
+ */
+async function calculate() {
+  try {
+    const web = new WebClient(config.get('chat_token'));
+    const channel = await web.conversations.list().
+        channels.filter((el) => (el.name_normalized === 'general'));
+    const dateString = dateToString(new Date());
+    const totalPrice = await db('round_info').where(
+        {studydate: dateString}
+    ).select('price');
+    const rsvp = await db('rsvp').where(
+        {study_date: dateString}
+    ).select('member_name', 'attending');
+    const attended = [];
+    for (const row of rsvp) {
+      if (row.attending === 1) {
+        attended.push(row.member_name);
+      }
+    }
+    const charge = parseInt(totalPrice.price / attended.length);
+    web.chat.postMessage({
+      channel: `${channel.id}`,
+      text: '',
+      as_user: true,
+      blocks: messageCal(attended, charge, dateString),
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 // index에서는 study_poll 파일 자체를 받는데 이건 또 왜 익스포트하고 있지? --> 고민 해결!
 module.exports = {
-  studyPoll,
+  studyPoll, calculate,
 };
