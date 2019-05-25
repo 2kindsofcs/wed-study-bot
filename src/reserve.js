@@ -13,7 +13,11 @@ async function reserve() {
   const attendCount = await db('rsvp').where(
       {study_date: reserveDate, attending: 1}
   ).count('*');
-  const optionId = attendCount[0]['count(*)'] >= 4? '27711' : '25684';
+  // 4명 미만이면 스터디 진행 안함
+  if (attendCount[0]['count(*)'] < 4) {
+    return '';
+  }
+  const optionId = attendCount[0]['count(*)'] >= 6? '27712' : '27711';
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   page.setViewport({width: 1920, height: 1080});
