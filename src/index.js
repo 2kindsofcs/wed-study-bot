@@ -16,4 +16,4 @@ db.migrate.latest().then(() => {
   cron.schedule(config.get('time.reserve_time'), () => reserve(), {
     timezone: 'Asia/Seoul',
   });
-});
+}, (e) => console.log(e));
