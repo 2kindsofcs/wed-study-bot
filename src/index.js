@@ -3,6 +3,7 @@
 
 const {studyPoll} = require('./study_poll');
 const {reserve} = require('./reserve');
+const {calculate} = require('./study_poll');
 const config = require('config');
 const db = require('./db');
 
@@ -14,6 +15,9 @@ db.migrate.latest().then(() => {
     timezone: 'Asia/Seoul',
   });
   cron.schedule(config.get('time.reserve_time'), () => reserve(), {
+    timezone: 'Asia/Seoul',
+  });
+  cron.schedule(config.get('time.cal_time'), () => calculate(), {
     timezone: 'Asia/Seoul',
   });
 }, (e) => console.log(e));
