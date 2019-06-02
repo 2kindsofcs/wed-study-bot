@@ -158,8 +158,8 @@ async function studyPoll() {
       console.log(`이미 있단다 깔깔깔`);
       return;
     }
-    web.chat.postMessage({
-      channel: `${channel.id}`,
+    await web.chat.postMessage({
+      channel: channel_id,
       text: '',
       as_user: true,
       blocks: botMessage([], [], [], dateString),
