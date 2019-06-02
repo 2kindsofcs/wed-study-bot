@@ -186,8 +186,9 @@ async function studyPoll() {
 async function calculate() {
   try {
     const web = new WebClient(config.get('chat_token'));
-    const channel = await web.conversations.list().
+    const channel = (await web.conversations.list()).
         channels.filter((el) => (el.name_normalized === 'general'));
+    const channel_id = channel[0].id;
     const dateString = dateToString(new Date());
     const totalPrice = await db('round_info').where(
         {studydate: dateString}
@@ -203,7 +204,7 @@ async function calculate() {
     }
     const charge = parseInt(totalPrice.price / attended.length);
     web.chat.postMessage({
-      channel: `${channel.id}`,
+      channel: channel_id,
       text: '',
       as_user: true,
       blocks: messageCal(attended, charge, dateString),
