@@ -5,6 +5,7 @@ const config = require('config');
 const {dateToString, addDays} = require('./date_utils');
 const {botMessage} = require('./message_template');
 const {messageCal} = require('./calculate');
+const logger = require('simple-node-logger').createSimpleLogger();
 const db = require('./db');
 
 const app = express();
@@ -143,7 +144,7 @@ async function studyPoll() {
     const channel = (await web.conversations.list()).
         channels.filter((el) => (el.name_normalized === 'general'));
     if (!channel) {
-      console.log('그런 거 없다');
+      logger.fatal('it is fata error: can\'t find channel');
       return;
     }
     const channel_id = channel[0].id;
@@ -153,9 +154,8 @@ async function studyPoll() {
     const roundCount = await db('round_info').where(
         {study_date: dateString}
     ).count('*');
-    console.log(roundCount);
     if (roundCount[0]['count(*)'] !== 0) {
-      console.log(`이미 있단다 깔깔깔`);
+      logger.warn('is your server okay?');
       return;
     }
     await web.chat.postMessage({
@@ -176,7 +176,7 @@ async function studyPoll() {
         membersList.map((name)=>({study_date: dateString, member_name: name}))
     );
   } catch (e) {
-    console.log(e);
+    logger.fatal('posting message faild');
   }
 } // 함수는 끝에 세미콜론 없어
 
@@ -210,7 +210,7 @@ async function calculate() {
       blocks: messageCal(attended, charge, dateString),
     });
   } catch (e) {
-    console.log(e);
+    logger.fatal('calculation failed');
   }
 }
 
