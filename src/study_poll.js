@@ -54,22 +54,16 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
     const web = new WebClient(config.get('chat_token'));
     const data = JSON.parse(req.body.payload);
     const [response, dateString] = data.actions[0].value.split('_');
+    console.log(response, dateString);
     // post 요청이 날아온 시각을 확인하는 방법도 있겠지만, 어차피 크론이 6시에 예약을 시킬 것이므로
     // db를 확인해서(예약완료시 price에 가격이 기입될테니까) null이 아니면 요청 무시!
     if (await db('round_info').where({
       study_date: dateString, price: null,
     })) {
-      const currentDate = dateToString(new Date());
       const userId = data.user.id;
       const isAttending = response === 'attend';
-      const isValidDate = currentDate === dateString;
       // 조건을 추가하고 싶을 때 계속 추가하다보면 if 밑에 또 if...식으로 너무 복잡해지므로
       // 이럴 때 쓰는 방법 중 하나가 역으로 if(!조건)하고 아무 일도 하지 않는 것.
-      if (!isValidDate) {
-        res.status(400);
-        res.end();
-        return;
-      }
       if (isAttending) {
         await db('rsvp').where(
             {member_name: userId, study_date: dateString}
@@ -126,8 +120,11 @@ app.post('/', async (req, res) => { // user가 참석 또는 불참 버튼을 �
           } // 빠져있던 dateString 추가
       );
       res.status(200);
-      res.end();
+    } else {
+      console.log("round_info 맞는 조건이 없읍니다");
+      res.status(404);
     }
+    res.end();
   } catch (e) {
     console.log(e);
   }
@@ -143,12 +140,13 @@ async function studyPoll() {
     // dateString은 cron이 이 함수를 실행한 날짜이다.
     const dateString = dateToString(addDays(new Date(), 3));
     const web = new WebClient(config.get('chat_token'));
-    const channel = await web.conversations.list().
+    const channel = (await web.conversations.list()).
         channels.filter((el) => (el.name_normalized === 'general'));
     if (!channel) {
       console.log('그런 거 없다');
       return;
     }
+    const channel_id = channel[0].id;
     // Q.어차피 cron으로 일주일에 한번씩 돌릴건데 왜 확인을 해야하죠?
     // A.만약 서버가 꺼졌다 다시 켜진다거나 하는 상황에서 동일한 메세지가
     // 계속 채팅방에 뿌려지는 것을 막을 수 있고, db에 insert되는 것도 막을 수 있음.
@@ -169,7 +167,7 @@ async function studyPoll() {
     // 일단 가격은 모르니까(수요조사 전이므로) 스터디 날짜만 저장
     await db('round_info').insert({study_date: dateString});
     let membersList = (await web.conversations.members({
-      channel: channel.id,
+      channel: channel_id,
     })).members;
     // bot은 제외시킨다.
     membersList = membersList.filter((mem) => (mem !== 'UH3CD2TQA'));
